@@ -8,9 +8,11 @@ import tensorflow as tf
 from tqdm import tqdm
 import wrappers
 import demodice
+import d4rl
 import utils
 import time
 import pickle
+import wandb
 
 
 def evaluate_d4rl(env, actor, train_env_id, num_episodes=10):
@@ -42,10 +44,14 @@ def evaluate_d4rl(env, actor, train_env_id, num_episodes=10):
 
     mean_score = total_returns / num_episodes
     mean_timesteps = total_timesteps / num_episodes
-    return mean_score, mean_timesteps
+    norm_score = ((mean_score - d4rl.infos.REF_MIN_SCORE[env.spec.id]) /
+                  (d4rl.infos.REF_MAX_SCORE[env.spec.id] -
+                   d4rl.infos.REF_MIN_SCORE[env.spec.id]))
+    return norm_score, mean_timesteps
 
 
 def run(config):
+    wandb.init(config=config, project='demodice')
     seed = config['seed']
     tf.random.set_seed(seed)
     np.random.seed(seed)
@@ -65,8 +71,9 @@ def run(config):
 
     dataset_dir = config['dataset_dir']
 
+    start_idx = np.random.randint(low=0, high=1000-expert_num_traj)
     (expert_initial_states, expert_states, expert_actions, expert_next_states, expert_dones) = utils.load_d4rl_data(
-        dataset_dir, env_id, expert_dataset_name, expert_num_traj, start_idx=0)
+        dataset_dir, env_id, expert_dataset_name, expert_num_traj, start_idx=start_idx)
 
     # load non-expert dataset
     imperfect_init_states, imperfect_states, imperfect_actions, imperfect_next_states, imperfect_dones = [], [], [], [], []
@@ -210,6 +217,8 @@ def run(config):
                 for key, val in info_dict.items():
                     print(f'{key:25}: {val:8.3f}')
                 print('=========================')
+
+                wandb.log(info_dict, step=training_info['iteration'])
 
                 training_info['logs'].append({'step': training_info['iteration'], 'log': info_dict})
                 print(f'timestep {training_info["iteration"]} - log update...')
