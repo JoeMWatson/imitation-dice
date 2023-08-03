@@ -187,7 +187,7 @@ def run(config):
     # Start training
     start_time = time.time()
     with tqdm(total=config['total_iterations'], initial=training_info['iteration'], desc='',
-              disable=os.environ.get("DISABLE_TQDM", False), ncols=70) as pbar:
+              disable=config['disable_tqdm'], ncols=70) as pbar:
         while training_info['iteration'] < config['total_iterations']:
             if algorithm in ['demodice']:
                 union_init_indices = np.random.randint(0, len(union_init_states), size=config['batch_size'])

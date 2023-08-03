@@ -45,4 +45,5 @@ def get_parser():
     parser.add_argument('--use_last_layer_bias_critic', default=False, type=bool)
     parser.add_argument('--kernel_initializer', default='he_normal', type=str)
     parser.add_argument('--seed', default=0, type=int)
+    parser.add_argument('--disable-tqdm', action='store_true')
     return parser
