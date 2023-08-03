@@ -15,7 +15,7 @@ import pickle
 import wandb
 
 
-def evaluate_d4rl(env, actor, train_env_id, num_episodes=10):
+def evaluate_d4rl(env, actor, train_env_id, d4rl_env_id, num_episodes=10):
     """Evaluates the policy.
     Args:
         actor: A policy to evaluate
@@ -44,9 +44,9 @@ def evaluate_d4rl(env, actor, train_env_id, num_episodes=10):
 
     mean_score = total_returns / num_episodes
     mean_timesteps = total_timesteps / num_episodes
-    norm_score = ((mean_score - d4rl.infos.REF_MIN_SCORE[env.spec.id]) /
-                  (d4rl.infos.REF_MAX_SCORE[env.spec.id] -
-                   d4rl.infos.REF_MIN_SCORE[env.spec.id]))
+    norm_score = ((mean_score - d4rl.infos.REF_MIN_SCORE[d4rl_env_id]) /
+                  (d4rl.infos.REF_MAX_SCORE[d4rl_env_id] -
+                   d4rl.infos.REF_MIN_SCORE[d4rl_env_id]))
     return norm_score, mean_timesteps
 
 
@@ -61,6 +61,11 @@ def run(config):
 
     # expert data info
     expert_dataset_name = config['expert_dataset_name']
+
+    env_name, _ = config['env_id'].split('-')
+    dataset_name, _ = expert_dataset_name.split('-')
+    d4rl_env_id = f"{env_name}_{dataset_name}-v0".lower().replace('_', '-')
+    print(d4rl_env_id)
     expert_num_traj = config['expert_num_traj']
     # imperfect data info
     imperfect_dataset_names = config['imperfect_dataset_names']
@@ -72,6 +77,7 @@ def run(config):
     dataset_dir = config['dataset_dir']
 
     start_idx = np.random.randint(low=0, high=1000-expert_num_traj)
+    print(f'Random starting trajectory {start_idx}')
     (expert_initial_states, expert_states, expert_actions, expert_next_states, expert_dones) = utils.load_d4rl_data(
         dataset_dir, env_id, expert_dataset_name, expert_num_traj, start_idx=start_idx)
 
@@ -207,7 +213,7 @@ def run(config):
                 raise ValueError(f'Undefined algorithm {algorithm}')
 
             if training_info['iteration'] % config['log_interval'] == 0:
-                average_returns, evaluation_timesteps = evaluate_d4rl(eval_env, imitator, env_id)
+                average_returns, evaluation_timesteps = evaluate_d4rl(eval_env, imitator, env_id, d4rl_env_id)
 
                 info_dict.update({'eval': average_returns})
                 print(f'Eval: ave returns=d: {average_returns}'

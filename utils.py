@@ -272,7 +272,7 @@ def load_d4rl_data(dirname, env_id, dataname, num_trajectories, start_idx=0, dty
     if env.action_space.dtype == int:
         action_ = np.eye(env.action_space.n)[np.array(action_, dtype=np.int)]  # integer to one-hot encoding
 
-    print(f'{num_episodes} trajectories are sampled')
+    print(f'{num_episodes} trajectories are sampled, {num_episodes - start_idx} taken')
     return np.array(init_obs_, dtype=dtype), np.array(obs_, dtype=dtype), np.array(action_, dtype=dtype), np.array(
         next_obs_, dtype=dtype), np.array(done_)
 
